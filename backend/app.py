@@ -35,7 +35,7 @@ if not cap.isOpened():
     sys.exit(1)
 
 # Load YOLO model
-model = YOLO('yolo11n.pt')
+model = YOLO('yolo11m.pt')
 
 # Get video properties
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
