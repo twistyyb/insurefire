@@ -7,6 +7,13 @@ from collections import defaultdict
 import time
 import json
 import shutil
+from FurniturePriceEstimator import FurniturePriceEstimator
+import tkinter as tk
+
+# Initialize FurniturePriceEstimator
+root = tk.Tk()
+root.withdraw()  # Hide the main window since we only need the estimation functionality
+price_estimator = FurniturePriceEstimator(root)
 
 # Accept video path as argument or fallback to default
 video_path = sys.argv[1] 
@@ -252,14 +259,28 @@ for track_id, snapshot_info in best_snapshots.items():
         cv2.imwrite(snapshot_path, snapshot_info["snapshot"])
         snapshot_info["saved"] = True
         
+        # Estimate price for the item
+        try:
+            name, price = price_estimator.analyze_item_with_gemini(snapshot_path)
+            snapshot_info["estimated_name"] = name
+            snapshot_info["estimated_price"] = price
+        except Exception as e:
+            print(f"Error estimating price for {class_name} (ID: {track_id}): {str(e)}")
+            snapshot_info["estimated_name"] = class_name
+            snapshot_info["estimated_price"] = None
+        
         # Update metadata
         item_id = f"{class_name}_{item_count}"
         if item_id in item_metadata:
             item_metadata[item_id]["snapshot_path"] = snapshot_path
             item_metadata[item_id]["best_confidence"] = float(snapshot_info["conf"])
             item_metadata[item_id]["snapshot_frame"] = int(snapshot_info["frame_number"])
+            item_metadata[item_id]["estimated_name"] = snapshot_info["estimated_name"]
+            item_metadata[item_id]["estimated_price"] = snapshot_info["estimated_price"]
         
         print(f"Saved snapshot of {class_name} (ID: {track_id}) to {snapshot_path}")
+        if snapshot_info["estimated_price"] is not None:
+            print(f"Estimated price: ${snapshot_info['estimated_price']:,.2f} ({snapshot_info['estimated_name']})")
 
 # Filter metadata to only include items with snapshots
 filtered_metadata = {}
@@ -277,20 +298,32 @@ print(f"Saved item metadata to {metadata_path}")
 print("\nFinal Items Inventory:")
 snapshot_count = 0
 class_counts = defaultdict(int)
+total_value = 0
 
 # Count only items with snapshots
 for item_id, data in filtered_metadata.items():
     class_name = data["class"]
     class_counts[class_name] += 1
     snapshot_count += 1
+    if data.get("estimated_price") is not None:
+        total_value += data["estimated_price"]
 
-# Print counts by class
+# Print counts by class with prices
 for class_name, count in sorted(class_counts.items()):
-    print(f"{class_name}: {count}")
+    items = [item for item in filtered_metadata.values() if item["class"] == class_name]
+    avg_price = sum(item.get("estimated_price", 0) for item in items) / count if count > 0 else 0
+    print(f"{class_name}: {count} items")
+    for item in items:
+        if item.get("estimated_price") is not None:
+            print(f"  - {item['estimated_name']}: ${item['estimated_price']:,.2f}")
 
 print(f"\nTotal unique items with snapshots: {snapshot_count}")
+print(f"Total estimated value: ${total_value:,.2f}")
 print(f"Snapshots saved: {snapshot_count}")
 print(f"Snapshots directory: {os.path.abspath(snapshot_dir)}")
+
+# Clean up tkinter
+root.destroy()
 
 cap.release()
 out.release()

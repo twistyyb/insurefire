@@ -3,3 +3,4 @@ Pillow>=10.0.0
 supabase
 python-dotenv==1.0.0
 httpx[http2]>=0.28.1
+ultralytics==8.3.73
