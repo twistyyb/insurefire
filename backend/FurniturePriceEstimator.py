@@ -147,7 +147,6 @@ class FurniturePriceEstimator:
         try:
             # Parse the response into a tuple
             result = ast.literal_eval(response.text)
-            print(result)
             if isinstance(result, list) and len(result) == 2:
                 return (result[0], int(result[1]))
             else:
