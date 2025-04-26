@@ -1,25 +1,36 @@
 import { useState } from 'react'
 import Layout from '../components/Layout'
 import styles from '../styles/Product.module.css'
+import { uploadFileToSupabase } from '../components/fileUpload'
 
 export default function Product() {
   const [file, setFile] = useState(null)
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     setFile(e.target.files[0])
     setResult('')
+    setError('')
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!file) return
     setLoading(true)
-    // Replace with actual API call
-    setTimeout(() => {
-      setResult(`✅ Successfully processed "${file.name}"`)
+    setError('')
+    setResult('')
+
+    try {
+      const uploadedFile = await uploadFileToSupabase(file, 'video')
+      setResult(`✅ Successfully uploaded "${uploadedFile.original_name}"`)
+      console.log('Uploaded file details:', uploadedFile)
+    } catch (err) {
+      console.error('Upload error:', err)
+      setError(`❌ Error uploading file: ${err.message}`)
+    } finally {
       setLoading(false)
-    }, 2000)
+    }
   }
 
   return (
@@ -38,8 +49,14 @@ export default function Product() {
           disabled={!file || loading}
           className={styles.submit}
         >
-          {loading ? 'Processing…' : 'Submit'}
+          {loading ? 'Uploading…' : 'Upload'}
         </button>
+
+        {error && (
+          <div className={styles.error}>
+            <p>{error}</p>
+          </div>
+        )}
 
         {result && (
           <div className={styles.result}>
