@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 import io
 
 # Setup API key - you would need to get your own Gemini API key
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"
+GEMINI_API_KEY = "AIzaSyDAuu0GAm8Rr_qyHdNlAqRZQuBnC2KwiNI"
 genai.configure(api_key=GEMINI_API_KEY)
 
 class FurniturePriceEstimator:
@@ -20,7 +20,7 @@ class FurniturePriceEstimator:
         self.setup_ui()
         
         # Initialize Gemini model
-        self.model = genai.GenerativeModel('gemini-pro-vision')
+        self.model = genai.GenerativeModel('gemini-2.0-flash-lite')
         
     def setup_ui(self):
         # Image display area
@@ -83,7 +83,7 @@ class FurniturePriceEstimator:
         
         try:
             # Process image with Gemini
-            response = self.analyze_furniture_with_gemini()
+            response = self.analyze_item_with_gemini()
             
             # Display results
             self.result_text.delete(1.0, END)
@@ -92,19 +92,28 @@ class FurniturePriceEstimator:
             self.result_text.delete(1.0, END)
             self.result_text.insert(END, f"Error analyzing image: {str(e)}")
     
-    def analyze_furniture_with_gemini(self):
+    def analyze_item_with_gemini(self):
         # Prepare the image
         image = Image.open(self.current_image_path)
         
         # Prepare prompt for Gemini
         prompt = """
-        Please analyze this furniture item and provide the following information:
+        Please analyze this furniture item and provide the following information in this exact format:
+
+        PRICE: [Provide a single estimated price in USD]
+
+        DETAILED ANALYSIS:
         1. What type of furniture is this?
         2. Describe its style, materials, and condition
-        3. Estimate its market value (provide a range)
-        4. Explain the factors that influence your price estimation
+        3. Explain the factors that influence your price estimation
         
         Format your response in a clear, organized manner.
+        """
+
+        prompt2 = """
+        Please analyze this item, estimate its price and and produce a single, number value between 1 and 1000000.
+        Analyze the object, and decide a very short name for it 
+        Your response should be a list of two values in the format of ["name of object", price] exactly.
         """
         
         # Get response from Gemini
