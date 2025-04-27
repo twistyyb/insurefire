@@ -6,6 +6,7 @@ from tkinter import filedialog, Label, Button, Text, END, WORD
 from PIL import Image, ImageTk
 import io
 import ast
+import requests
 
 # Setup API key - you would need to get your own Gemini API key
 GEMINI_API_KEY = "AIzaSyDAuu0GAm8Rr_qyHdNlAqRZQuBnC2KwiNI"
@@ -46,41 +47,28 @@ class FurniturePriceEstimator:
         self.result_text.pack(pady=10)
     
     def upload_images(self):
-        # Open file dialog to select multiple images
         file_paths = filedialog.askopenfilenames(
+            title="Select Furniture Image(s)",
             filetypes=[("Image files", "*.jpg *.jpeg *.png")]
         )
         
         if file_paths:
-            # Store the file paths
             self.current_images = list(file_paths)
-            self.current_image_path = file_paths[0]  # Set current image for display
-            
-            # Display the first image
-            self.display_image(self.current_image_path)
-            
-            # Enable the estimate button
             self.estimate_btn.config(state="normal")
             
-            # Clear previous results
+            # Display the first image
+            self.display_image(self.current_images[0])
+            
+    def display_image(self, image_path):
+        try:
+            image = Image.open(image_path)
+            image.thumbnail((400, 400))  # Resize for display
+            photo = ImageTk.PhotoImage(image)
+            self.image_label.config(image=photo)
+            self.image_label.image = photo  # Keep a reference
+        except Exception as e:
             self.result_text.delete(1.0, END)
-            self.result_text.insert(END, f"Loaded {len(file_paths)} images:\n")
-            for path in file_paths:
-                self.result_text.insert(END, f"- {os.path.basename(path)}\n")
-            self.result_text.insert(END, "\nClick 'Estimate Price' to analyze the items.")
-    
-    def display_image(self, file_path):
-        # Open and resize image for display
-        img = Image.open(file_path)
-        # Resize while maintaining aspect ratio
-        img.thumbnail((400, 400))
-        photo_img = ImageTk.PhotoImage(img)
-        
-        # Update image in label
-        self.image_label.config(image=photo_img)
-        self.image_label.image = photo_img  # Keep a reference
-    
-
+            self.result_text.insert(END, f"Error displaying image: {str(e)}")
     
     def estimate_price(self):
         if not self.current_images:
@@ -127,12 +115,13 @@ class FurniturePriceEstimator:
         self.result_text.insert(END, "\n=== TOTAL ===\n")
         self.result_text.insert(END, f"Total Estimated Value: ${total_price:,.2f}\n")
 
-
-    
     # Returns a tuple of (name, price)
-    def analyze_item_with_gemini(self, image_path):
-        # Prepare the image
-        image = Image.open(image_path)
+    def analyze_item_with_gemini(self, image_data):
+        # Convert image data to PIL Image
+        if isinstance(image_data, bytes):
+            image = Image.open(io.BytesIO(image_data))
+        else:
+            image = image_data  # Assume it's already a PIL Image
         
         prompt2 = """
         Please analyze this item, estimate its price and and produce a single, number value between 1 and 1000000.

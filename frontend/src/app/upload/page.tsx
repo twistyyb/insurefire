@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { uploadFileToSupabase } from '@/components/fileUpload';
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -12,6 +13,8 @@ export default function UploadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -56,59 +59,59 @@ export default function UploadPage() {
 
     setIsUploading(true);
     setError(null);
+    setSuccess(null);
     setUploadProgress(0);
 
-    // Simulate the entire upload process with fake data
-    const simulateUpload = () => {
-      let progress = 0;
+    try {
+      // Step 1: Create a job ID
+      const jobResponse = await fetch('http://localhost:8080/api/create-job', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!jobResponse.ok) {
+        throw new Error('Failed to create job');
+      }
+
+      const { job_id } = await jobResponse.json();
+      setJobId(job_id);
+      setSuccess(`Job created: ${job_id}`);
+      setUploadProgress(30);
+
+      // Step 2: Upload to Supabase with job ID
+      const result = await uploadFileToSupabase(file, job_id, "video");
+      setUploadProgress(70);
+
+      // Step 3: Send the Supabase URL to backend for processing
+      const processResponse = await fetch('http://localhost:8080/api/process-video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileUrl: result.url,
+          job_id: job_id
+        }),
+      });
+
+      if (!processResponse.ok) {
+        throw new Error('Failed to start video processing');
+      }
+
+      setSuccess('Video uploaded and processing started!');
+      setUploadProgress(100);
       
-      // Start with quick progress
-      const initialInterval = setInterval(() => {
-        progress += Math.floor(Math.random() * 3) + 1;
-        if (progress >= 30) {
-          clearInterval(initialInterval);
-          setUploadProgress(30);
-          
-          // Slow down in the middle (processing stage)
-          const middleInterval = setInterval(() => {
-            progress += Math.floor(Math.random() * 2) + 1;
-            if (progress >= 75) {
-              clearInterval(middleInterval);
-              setUploadProgress(75);
-              
-              // Speed up at the end
-              const finalInterval = setInterval(() => {
-                progress += Math.floor(Math.random() * 3) + 1;
-                if (progress >= 95) {
-                  clearInterval(finalInterval);
-                  setUploadProgress(95);
-                  
-                  // Complete the upload
-                  setTimeout(() => {
-                    setUploadProgress(100);
-                    
-                    // Redirect after showing 100% for a moment
-                    setTimeout(() => {
-                      // Redirect to the results page
-                      router.push(`/results`);
-                    }, 1500);
-                  }, 800);
-                } else {
-                  setUploadProgress(progress);
-                }
-              }, 300);
-            } else {
-              setUploadProgress(progress);
-            }
-          }, 400);
-        } else {
-          setUploadProgress(progress);
-        }
-      }, 200);
-    };
-    
-    // Start the simulation
-    simulateUpload();
+      // Redirect to results page with job ID
+      setTimeout(() => {
+        router.push(`/about?job_id=${job_id}`);
+      }, 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload video');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -164,6 +167,16 @@ export default function UploadPage() {
 
           {error && (
             <div className="mt-4 text-red-500">{error}</div>
+          )}
+
+          {success && (
+            <div className="mt-4 text-green-500">{success}</div>
+          )}
+
+          {jobId && (
+            <div className="mt-4 text-blue-500">
+              Job ID: {jobId}
+            </div>
           )}
 
           {isUploading && (

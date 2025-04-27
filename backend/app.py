@@ -7,9 +7,27 @@ import json
 import shutil
 from FurniturePriceEstimator import FurniturePriceEstimator
 import tkinter as tk
-import argparse
+from supabase import create_client, Client
+import uuid
+from datetime import datetime
+from dotenv import load_dotenv
 
-def process_video(video_path):
+# Load environment variables from .env file
+load_dotenv()
+
+# Supabase configuration
+SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("Missing Supabase credentials. Please check your .env file.")
+
+supabase: Client = create_client(
+    SUPABASE_URL, 
+    SUPABASE_KEY
+)
+
+def process_video(video_path, job_id, db):
     print(f"process_video: {video_path}")
 
     # Configuration variables that can be imported from other files
@@ -61,8 +79,8 @@ def process_video(video_path):
     print(f"Processing at: {new_fps:.1f} FPS (every {frame_skip} frames)")
 
     # Optionally, save output
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('output_tracking_items.mp4', fourcc, fps, (width, height))
+    #fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    #out = cv2.VideoWriter('output_tracking_items.mp4', fourcc, fps, (width, height))
 
     # Dictionary to store unique object counts
     object_counts = defaultdict(int)
@@ -75,14 +93,6 @@ def process_video(video_path):
     confidence_threshold = 0.55  # Confidence threshold for detection
     iou_threshold = 0.45  # IoU threshold for tracking
     snapshot_confidence_threshold = 0.55  # Minimum confidence for taking a snapshot
-
-    # Create directory for snapshots (delete if it exists)
-    snapshot_dir = "item_snapshots"
-    if os.path.exists(snapshot_dir):
-        print(f"Removing existing snapshots directory: {snapshot_dir}")
-        shutil.rmtree(snapshot_dir)
-    os.makedirs(snapshot_dir, exist_ok=True)
-    print(f"Created fresh snapshots directory: {snapshot_dir}")
 
     # Dictionary to store best snapshots for each object
     best_snapshots = {}  # {track_id: {"conf": conf, "saved": False, "class": class_name, "path": path}}
@@ -275,66 +285,76 @@ def process_video(video_path):
         
         # Show and save the frame
         cv2.imshow('Insurance Item Tracking', frame)
-        out.write(frame)
+        #out.write(frame)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     # Save snapshots for each tracked object
-    print("\nSaving best snapshots of detected items...")
+    print("\nUploading best snapshots of detected items to Supabase...")
     for track_id, snapshot_info in best_snapshots.items():
         if track_id in tracked_objects and not snapshot_info["saved"]:
             class_name = snapshot_info["class"]
             item_count = sum(1 for t_id, cls in tracked_objects.items() if cls == class_name and t_id <= track_id)
             
-            # Create a unique filename
-            snapshot_filename = f"{class_name}_{item_count}_id{track_id}_conf{snapshot_info['conf']:.2f}_frame{snapshot_info['frame_number']}.jpg"
-            snapshot_path = os.path.join(snapshot_dir, snapshot_filename)
-            
-            # Save the snapshot
-            cv2.imwrite(snapshot_path, snapshot_info["snapshot"])
-            snapshot_info["saved"] = True
-            
-            # Estimate price for the item
             try:
-                name, price = price_estimator.analyze_item_with_gemini(snapshot_path)
-                snapshot_info["estimated_name"] = name
-                snapshot_info["estimated_price"] = price
+                # Upload snapshot to Supabase
+                public_url = upload_snapshot_to_supabase(
+                    snapshot_info["snapshot"],
+                    class_name,
+                    track_id,
+                    snapshot_info['conf'],
+                    snapshot_info['frame_number'],
+                    item_count
+                )
+                snapshot_info["saved"] = True
+                snapshot_info["public_url"] = public_url
+                
+                # Estimate price for the item using in-memory image data
+                try:
+                    # Convert OpenCV image to bytes
+                    _, buffer = cv2.imencode('.jpg', snapshot_info["snapshot"])
+                    if buffer is None:
+                        raise ValueError("Failed to encode image to JPEG format")
+                    image_bytes = buffer.tobytes()
+                    
+                    name, price = price_estimator.analyze_item_with_gemini(image_bytes)
+                    snapshot_info["estimated_name"] = name
+                    snapshot_info["estimated_price"] = price
+                except Exception as e:
+                    print(f"Error estimating price for {class_name} (ID: {track_id}): {str(e)}")
+                    snapshot_info["estimated_name"] = class_name
+                    snapshot_info["estimated_price"] = None
+                
+                # Update metadata
+                item_id = f"{class_name}_{item_count}"
+                if item_id in item_metadata:
+                    item_metadata[item_id]["public_url"] = public_url
+                    item_metadata[item_id]["best_confidence"] = float(snapshot_info["conf"])
+                    item_metadata[item_id]["snapshot_frame"] = int(snapshot_info["frame_number"])
+                    item_metadata[item_id]["estimated_name"] = snapshot_info["estimated_name"]
+                    item_metadata[item_id]["estimated_price"] = snapshot_info["estimated_price"]
+                
+                print(f"Uploaded snapshot of {class_name} (ID: {track_id}) to Supabase")
+                print(f"Public URL: {public_url}")
+                if snapshot_info["estimated_price"] is not None:
+                    print(f"Estimated price: ${snapshot_info['estimated_price']:,.2f} ({snapshot_info['estimated_name']})")
+                    
             except Exception as e:
-                print(f"Error estimating price for {class_name} (ID: {track_id}): {str(e)}")
-                snapshot_info["estimated_name"] = class_name
-                snapshot_info["estimated_price"] = None
-            
-            # Update metadata
-            item_id = f"{class_name}_{item_count}"
-            if item_id in item_metadata:
-                item_metadata[item_id]["snapshot_path"] = snapshot_path
-                item_metadata[item_id]["best_confidence"] = float(snapshot_info["conf"])
-                item_metadata[item_id]["snapshot_frame"] = int(snapshot_info["frame_number"])
-                item_metadata[item_id]["estimated_name"] = snapshot_info["estimated_name"]
-                item_metadata[item_id]["estimated_price"] = snapshot_info["estimated_price"]
-            
-            print(f"Saved snapshot of {class_name} (ID: {track_id}) to {snapshot_path}")
-            if snapshot_info["estimated_price"] is not None:
-                print(f"Estimated price: ${snapshot_info['estimated_price']:,.2f} ({snapshot_info['estimated_name']})")
+                print(f"Error processing snapshot for {class_name} (ID: {track_id}): {str(e)}")
+                continue
 
     # Filter metadata to only include items with snapshots
     filtered_metadata = {}
     for item_id, data in item_metadata.items():
-        if data.get("snapshot_path") is not None:
+        if data.get("public_url") is not None:
             filtered_metadata[item_id] = data
-
-    # Save metadata to JSON file
-    metadata_path = os.path.join(snapshot_dir, "item_metadata.json")
-    with open(metadata_path, 'w') as f:
-        json.dump(filtered_metadata, f, indent=2)
-    print(f"Saved item metadata to {metadata_path}")
 
     # Print final inventory
     print("\nFinal Items Inventory:")
     snapshot_count = 0
     class_counts = defaultdict(int)
-    total_value = 0
+    total_value = 0.0  # Initialize as float
 
     # Count only items with snapshots
     for item_id, data in filtered_metadata.items():
@@ -342,40 +362,94 @@ def process_video(video_path):
         class_counts[class_name] += 1
         snapshot_count += 1
         if data.get("estimated_price") is not None:
-            total_value += data["estimated_price"]
+            total_value += float(data["estimated_price"] or 0)  # Convert to float and handle None
 
     # Print counts by class with prices
     for class_name, count in sorted(class_counts.items()):
         items = [item for item in filtered_metadata.values() if item["class"] == class_name]
-        avg_price = sum(item.get("estimated_price", 0) for item in items) / count if count > 0 else 0
+        # Calculate average price only for items with valid prices
+        valid_prices = [float(item.get("estimated_price", 0)) for item in items if item.get("estimated_price") is not None]
+        avg_price = sum(valid_prices) / len(valid_prices) if valid_prices else 0
         print(f"{class_name}: {count} items")
         for item in items:
-            if item.get("estimated_price") is not None:
-                print(f"  - {item['estimated_name']}: ${item['estimated_price']:,.2f}")
+            price = item.get("estimated_price")
+            if price is not None:
+                print(f"  - {item['estimated_name']}: ${float(price):,.2f}")
+            else:
+                print(f"  - {item['estimated_name']}: Price not available")
 
     print(f"\nTotal unique items with snapshots: {snapshot_count}")
     print(f"Total estimated value: ${total_value:,.2f}")
-    print(f"Snapshots saved: {snapshot_count}")
-    print(f"Snapshots directory: {os.path.abspath(snapshot_dir)}")
+    print(f"Snapshots uploaded: {snapshot_count}")
 
-    # Upload inventory to Supabase
-    from InventoryUploader import InventoryUploader
-    uploader = InventoryUploader()
-    print("\nUploading inventory to Supabase...")
-    response = uploader.upload_inventory(metadata_path, video_path)
-    if response:
-        print(f"Inventory uploaded successfully with ID: {response.get('id')}")
-        print(f"Total value recorded: ${response.get('totalValue', total_value):,.2f}")
-        print(f"Number of items: {response.get('numItems', snapshot_count)}")
-    else:
-        print("Failed to upload inventory to Supabase. Check connection and credentials.")
-
-
-    # response.get('id') is the jobId
     # Clean up tkinter
     root.destroy()
 
     cap.release()
-    out.release()
+    #out.release()
     cv2.destroyAllWindows()
-    return snapshot_dir
+
+    # update job on supabase
+    db.complete_job(job_id, total_value, len(filtered_metadata), filtered_metadata)
+
+    return
+
+def upload_snapshot_to_supabase(snapshot, class_name, track_id, conf, frame_number, item_count):
+    """Upload a snapshot to Supabase storage and return the public URL."""
+    try:
+        # Convert OpenCV image to bytes
+        _, buffer = cv2.imencode('.jpg', snapshot)
+        if buffer is None:
+            raise ValueError("Failed to encode image to JPEG format")
+            
+        file_data = buffer.tobytes()
+        
+        # Generate unique filename
+        unique_prefix = f"{int(datetime.now().timestamp())}-{uuid.uuid4().hex[:7]}"
+        snapshot_filename = f"{class_name}_{item_count}_id{track_id}_conf{conf:.2f}_frame{frame_number}.jpg"
+        unique_filename = f"{unique_prefix}-{snapshot_filename}"
+        
+        # Create safe path structure
+        formatted_date = datetime.now().strftime("%Y%m%d")
+        file_path = f"{formatted_date}/{unique_filename}"
+        
+        # Upload to Supabase Storage
+        bucket_name = "file-upload"
+        try:
+            storage_response = supabase.storage.from_(bucket_name).upload(
+                file_path,
+                file_data,
+                {
+                    "cache-control": "3600",
+                    "content-type": "image/jpeg"
+                }
+            )
+        except Exception as e:
+            raise Exception(f"Failed to upload to Supabase storage: {str(e)}")
+        
+        # Get the public URL
+        try:
+            public_url = supabase.storage.from_(bucket_name).get_public_url(file_path)
+        except Exception as e:
+            raise Exception(f"Failed to get public URL: {str(e)}")
+        
+        # Save file metadata to database
+        try:
+            table_response = supabase.table('file_uploads').insert({
+                'user_id': "66274d9c-6ece-4eeb-a8ed-19051a8a2103",  # Placeholder user ID
+                'file_name': unique_filename,
+                'original_name': snapshot_filename,
+                'file_size': len(file_data),
+                'file_type': 'image/jpeg',
+                'file_path': file_path,
+                'public_url': public_url,
+                'data_type': 'photo'
+            }).execute()
+        except Exception as e:
+            raise Exception(f"Failed to save metadata to database: {str(e)}")
+        
+        return public_url
+        
+    except Exception as e:
+        print(f"Error uploading snapshot to Supabase: {str(e)}")
+        raise

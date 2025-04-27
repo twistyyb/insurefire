@@ -46,8 +46,9 @@ next-env.d.ts
 env/
 backend/venv
 frontend/venv
-frontend/node_modules
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+frontend/node_modules

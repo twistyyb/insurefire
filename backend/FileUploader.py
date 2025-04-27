@@ -30,7 +30,7 @@ class FileUploader:
         
         # Initialize variables
         self.current_file_path = None
-        self.bucket_name = "file-uploads"
+        self.bucket_name = "file-upload"
         self.user_id = "66274d9c-6ece-4eeb-a8ed-19051a8a2103"  # Placeholder user ID
         
         # Setup UI
@@ -123,7 +123,6 @@ class FileUploader:
                     }
                 )
                 print("storage_response", storage_response)
-                return
                 print("File uploaded to storage successfully")
             except Exception as e:
                 print(f"Storage upload error: {str(e)}")
