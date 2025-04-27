@@ -7,7 +7,6 @@ import json
 import shutil
 from FurniturePriceEstimator import FurniturePriceEstimator
 import tkinter as tk
-import argparse
 
 def process_video(video_path):
     print(f"process_video: {video_path}")
