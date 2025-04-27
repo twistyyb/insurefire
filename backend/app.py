@@ -6,7 +6,6 @@ from collections import defaultdict
 import json
 import shutil
 from FurniturePriceEstimator import FurniturePriceEstimator
-import tkinter as tk
 from supabase import create_client, Client
 import uuid
 from datetime import datetime
@@ -51,9 +50,7 @@ def process_video(video_path, job_id, db, show_display):
     hide_display = not show_display  # Set to True to hide bounding boxes, labels, and inventory display
 
     # Initialize FurniturePriceEstimator
-    root = tk.Tk()
-    root.withdraw()  # Hide the main window since we only need the estimation functionality
-    price_estimator = FurniturePriceEstimator(root)
+    price_estimator = FurniturePriceEstimator()
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -384,9 +381,6 @@ def process_video(video_path, job_id, db, show_display):
     print(f"\nTotal unique items with snapshots: {snapshot_count}")
     print(f"Total estimated value: ${total_value:,.2f}")
     print(f"Snapshots uploaded: {snapshot_count}")
-
-    # Clean up tkinter
-    root.destroy()
 
     cap.release()
     cv2.destroyAllWindows()
