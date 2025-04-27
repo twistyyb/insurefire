@@ -163,6 +163,3 @@ class InventoryUploader:
             traceback.print_exc()
             return None
 
-# Example usage:
-# uploader = InventoryUploader()
-# uploader.upload_inventory("item_snapshots/item_metadata.json", "source_video.mp4")
