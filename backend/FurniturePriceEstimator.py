@@ -6,7 +6,7 @@ import io
 import ast
 
 # Setup API key - you would need to get your own Gemini API key
-GEMINI_API_KEY = "AIzaSyDAuu0GAm8Rr_qyHdNlAqRZQuBnC2KwiNI"
+GEMINI_API_KEY = "AIzaSyB8PLcKFNESM1bvTAtPUEJEfubcLPOQ7Ys"
 genai.configure(api_key=GEMINI_API_KEY)
 
 class FurniturePriceEstimator:

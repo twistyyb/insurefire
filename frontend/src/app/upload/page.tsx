@@ -44,6 +44,8 @@ export default function UploadPage() {
         clearInterval(frameIntervalRef.current);
       }
     }
+    // disable visualization always
+    setShowVisualization(false);
 
     return () => {
       if (frameIntervalRef.current) {
@@ -119,6 +121,7 @@ export default function UploadPage() {
       if (showVisualization) {
         activateProcessing();
       }
+
 
       // Step 3: Send the Supabase URL to backend for processing
       const processResponse = await fetch('http://localhost:8080/api/process-video', {

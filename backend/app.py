@@ -6,13 +6,11 @@ from collections import defaultdict
 import json
 import shutil
 from FurniturePriceEstimator import FurniturePriceEstimator
+import tkinter as tk
 from supabase import create_client, Client
 import uuid
 from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask, send_file
-import threading
-import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -29,28 +27,31 @@ supabase: Client = create_client(
     SUPABASE_KEY
 )
 
-app = Flask(__name__)
-
-# Create frames directory if it doesn't exist
-FRAMES_DIR = os.path.join(os.path.dirname(__file__), 'frames')
-os.makedirs(FRAMES_DIR, exist_ok=True)
-
-# Global variable to track the latest frame
-frame_lock = threading.Lock()
-
-def save_frame(frame):
-    """Save the current frame to disk"""
-    frame_path = os.path.join(FRAMES_DIR, 'displayFrame.jpg')
-    cv2.imwrite(frame_path, frame)
-
 def process_video(video_path, job_id, db, show_display):
     print(f"process_video: {video_path}")
-    
+
     # Configuration variables that can be imported from other files
     hide_display = not show_display  # Set to True to hide bounding boxes, labels, and inventory display
-
+    hide_display = True
     # Initialize FurniturePriceEstimator
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window since we only need the estimation functionality
     price_estimator = FurniturePriceEstimator()
+
+    # Parse command line arguments
+    #parser = argparse.ArgumentParser(description='Object detection and tracking from video')
+    #parser.add_argument('video_path', help='Path to the video file')
+    #args = parser.parse_args()
+
+    # Get video path from arguments
+    #video_path = args.video_path
+
+    # Expand user (~) and get absolute path
+    #video_path = os.path.abspath(os.path.expanduser(video_path))
+
+    # if not os.path.isfile(video_path):
+    #     print(f"Error: File '{video_path}' does not exist.")
+    #     sys.exit(1)
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -76,6 +77,10 @@ def process_video(video_path, job_id, db, show_display):
 
     print(f"Original video: {width}x{height}, {fps} FPS, {total_frames} frames")
     print(f"Processing at: {new_fps:.1f} FPS (every {frame_skip} frames)")
+
+    # Optionally, save output
+    #fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    #out = cv2.VideoWriter('output_tracking_items.mp4', fourcc, fps, (width, height))
 
     # Dictionary to store unique object counts
     object_counts = defaultdict(int)
@@ -137,7 +142,7 @@ def process_video(video_path, job_id, db, show_display):
         # Run YOLOv8 tracking on the frame with improved parameters
         results = model.track(
             frame, 
-            persist=False, 
+            persist=True, 
             conf=confidence_threshold, 
             iou=iou_threshold, 
             imgsz=640
@@ -278,16 +283,12 @@ def process_video(video_path, job_id, db, show_display):
                 cv2.putText(frame, f"{cls}: {count}", (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                 y_pos += 30
         
-        # Save the current frame only if display is enabled
-        if not hide_display:
-            save_frame(frame)
-        
-        # Show the frame only if display is enabled
-        if not hide_display:
+            # Show and save the frame
             cv2.imshow('Insurance Item Tracking', frame)
+            #out.write(frame)
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
     # Save snapshots for each tracked object
     print("\nUploading best snapshots of detected items to Supabase...")
@@ -382,7 +383,11 @@ def process_video(video_path, job_id, db, show_display):
     print(f"Total estimated value: ${total_value:,.2f}")
     print(f"Snapshots uploaded: {snapshot_count}")
 
+    # Clean up tkinter
+    root.destroy()
+
     cap.release()
+    #out.release()
     cv2.destroyAllWindows()
 
     # update job on supabase
@@ -450,12 +455,3 @@ def upload_snapshot_to_supabase(snapshot, class_name, track_id, conf, frame_numb
     except Exception as e:
         print(f"Error uploading snapshot to Supabase: {str(e)}")
         raise
-
-if __name__ == '__main__':
-    # Start Flask server in a separate thread
-    flask_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=8081))
-    flask_thread.daemon = True
-    flask_thread.start()
-    
-    # Start the main application
-    app.run(host='0.0.0.0', port=8080)

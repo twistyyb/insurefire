@@ -52,3 +52,6 @@ env.bak/
 venv.bak/
 
 frontend/node_modules
+
+backend/output_tracking_items.mp4
+backend/__pycache__
