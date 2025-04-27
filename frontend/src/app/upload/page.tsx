@@ -12,7 +12,7 @@ export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showVisualization, setShowVisualization] = useState(true);
+  const [showVisualization, setShowVisualization] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -116,7 +116,9 @@ export default function UploadPage() {
       const result = await uploadFileToSupabase(file, job_id, "video");
       setUploadProgress(66);
 
-      activateProcessing();
+      if (showVisualization) {
+        activateProcessing();
+      }
 
       // Step 3: Send the Supabase URL to backend for processing
       const processResponse = await fetch('http://localhost:8080/api/process-video', {
@@ -135,7 +137,9 @@ export default function UploadPage() {
         throw new Error('Failed to start video processing');
       }
 
-      setIsProcessing(false);
+      if (!showVisualization) {
+        setIsProcessing(false);
+      }
 
       setUploadProgress(100);
 
@@ -257,11 +261,11 @@ export default function UploadPage() {
 
             <label className={`flex items-center space-x-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
               <input
-                type="radio"
+                type="checkbox"
                 checked={showVisualization}
                 onChange={(e) => setShowVisualization(e.target.checked)}
                 disabled={isUploading}
-                className="form-radio h-5 w-5 text-blue-600 focus:ring-blue-500"
+                className="form-checkbox h-5 w-5 text-blue-600 focus:ring-blue-500"
               />
               <span className={`text-gray-700 ${isUploading ? 'text-gray-400' : ''}`}>Visualize Processing</span>
             </label>
