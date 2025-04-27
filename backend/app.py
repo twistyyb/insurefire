@@ -59,7 +59,7 @@ print(f"Processing at: {new_fps:.1f} FPS (every {frame_skip} frames)")
 
 # Optionally, save output
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter('output_tracking_items.mp4', fourcc, fps, (width, height))
+# out = cv2.VideoWriter('output_tracking_items.mp4', fourcc, fps, (width, height))
 
 # Dictionary to store unique object counts
 object_counts = defaultdict(int)
@@ -272,7 +272,7 @@ while cap.isOpened():
     
     # Show and save the frame
     cv2.imshow('Insurance Item Tracking', frame)
-    out.write(frame)
+    # out.write(frame)
     
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
@@ -371,5 +371,5 @@ else:
 root.destroy()
 
 cap.release()
-out.release()
+# out.release()
 cv2.destroyAllWindows()

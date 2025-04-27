@@ -8,8 +8,8 @@
     "estimated_value": null,
     "best_confidence": 0.8097308874130249,
     "snapshot_frame": 35,
-    "estimated_name": "TV",
-    "estimated_price": 700
+    "estimated_name": "Television",
+    "estimated_price": 800
   },
   "couch_1": {
     "class": "couch",
@@ -21,7 +21,7 @@
     "best_confidence": 0.8425077795982361,
     "snapshot_frame": 135,
     "estimated_name": "Sofa",
-    "estimated_price": 400
+    "estimated_price": 500
   },
   "bottle_1": {
     "class": "bottle",
@@ -33,7 +33,7 @@
     "best_confidence": 0.8162314295768738,
     "snapshot_frame": 131,
     "estimated_name": "Bottle",
-    "estimated_price": 5
+    "estimated_price": 10
   },
   "couch_2": {
     "class": "couch",
@@ -44,8 +44,8 @@
     "estimated_value": null,
     "best_confidence": 0.936603844165802,
     "snapshot_frame": 141,
-    "estimated_name": "Couch",
-    "estimated_price": 750
+    "estimated_name": "Sofa",
+    "estimated_price": 5000
   },
   "remote_1": {
     "class": "remote",
@@ -56,8 +56,8 @@
     "estimated_value": null,
     "best_confidence": 0.754351019859314,
     "snapshot_frame": 131,
-    "estimated_name": "Phone",
-    "estimated_price": 150
+    "estimated_name": "Cellphone",
+    "estimated_price": 300
   },
   "couch_3": {
     "class": "couch",
@@ -69,7 +69,7 @@
     "best_confidence": 0.9003316760063171,
     "snapshot_frame": 225,
     "estimated_name": "Chair",
-    "estimated_price": 300
+    "estimated_price": 400
   },
   "suitcase_1": {
     "class": "suitcase",
