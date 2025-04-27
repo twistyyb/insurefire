@@ -89,8 +89,8 @@ export default function UploadPage() {
                     
                     // Redirect after showing 100% for a moment
                     setTimeout(() => {
-                      // Use a fake ID for the results page
-                      router.push(`/about`);
+                      // Redirect to the results page
+                      router.push(`/results`);
                     }, 1500);
                   }, 800);
                 } else {
@@ -141,7 +141,7 @@ export default function UploadPage() {
                 <div className="text-5xl mb-4">🎥</div>
                 <p className="text-xl text-gray-600 mb-2">Drag and drop your video here</p>
                 <p className="text-gray-500">or click to browse files</p>
-                <p className="text-sm text-gray-400 mt-4">Supported formats: MP4, MOV, AVI</p>
+                <p className="text-sm text-gray-400 mt-4">Supported formats: MP4</p>
               </>
             ) : (
               <>
