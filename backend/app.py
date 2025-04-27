@@ -31,7 +31,7 @@ def process_video(video_path, job_id, db):
     print(f"process_video: {video_path}")
 
     # Configuration variables that can be imported from other files
-    hide_display = True  # Set to True to hide bounding boxes, labels, and inventory display
+    hide_display = False  # Set to True to hide bounding boxes, labels, and inventory display
 
     # Initialize FurniturePriceEstimator
     root = tk.Tk()
@@ -305,7 +305,8 @@ def process_video(video_path, job_id, db):
                     track_id,
                     snapshot_info['conf'],
                     snapshot_info['frame_number'],
-                    item_count
+                    item_count,
+                    job_id
                 )
                 snapshot_info["saved"] = True
                 snapshot_info["public_url"] = public_url
@@ -394,7 +395,7 @@ def process_video(video_path, job_id, db):
 
     return
 
-def upload_snapshot_to_supabase(snapshot, class_name, track_id, conf, frame_number, item_count):
+def upload_snapshot_to_supabase(snapshot, class_name, track_id, conf, frame_number, item_count, job_id):
     """Upload a snapshot to Supabase storage and return the public URL."""
     try:
         # Convert OpenCV image to bytes
@@ -443,7 +444,8 @@ def upload_snapshot_to_supabase(snapshot, class_name, track_id, conf, frame_numb
                 'file_type': 'image/jpeg',
                 'file_path': file_path,
                 'public_url': public_url,
-                'data_type': 'photo'
+                'data_type': 'photo',
+                'job_id': job_id
             }).execute()
         except Exception as e:
             raise Exception(f"Failed to save metadata to database: {str(e)}")
