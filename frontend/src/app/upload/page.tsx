@@ -142,7 +142,7 @@ export default function UploadPage() {
                 <div className="text-5xl mb-4">🎥</div>
                 <p className="text-xl text-gray-600 mb-2">Drag and drop your video here</p>
                 <p className="text-gray-500">or click to browse files</p>
-                <p className="text-sm text-gray-400 mt-4">Supported formats: MP4, MOV, AVI</p>
+                <p className="text-sm text-gray-400 mt-4">Supported formats: MP4</p>
               </>
             ) : (
               <>

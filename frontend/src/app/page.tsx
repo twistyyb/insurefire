@@ -4,6 +4,7 @@ import { BackgroundPaths } from "@/components/ui/background-paths";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { GooeyText } from "@/components/ui/gooey-text-morphing";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -21,6 +22,23 @@ export default function LandingPage() {
     <div className="relative min-h-screen">
       {/* Background Component */}
       <BackgroundPaths title="InsureFire" />
+      
+      {/* Gooey Text Animation */}
+      <div className="absolute top-1/4 left-0 right-0 z-20 transform -translate-y-1/2">
+        <div className="h-[60px] flex items-center justify-center">
+          <GooeyText
+            texts={[
+              "Protect your Assets",
+              "Document with Ease",
+              "Insure with Confidence"
+            ]}
+            morphTime={1.5}
+            cooldownTime={2}
+            className="font-bold"
+            textClassName="text-black drop-shadow-md text-xl font-sans opacity-90"
+          />
+        </div>
+      </div>
       
       {/* Button to About Page with transition */}
       <div className="absolute bottom-20 left-0 right-0 flex justify-center z-20">
