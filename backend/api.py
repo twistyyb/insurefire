@@ -14,7 +14,8 @@ def handle_video_processing():
         # Get the video URL from the request
         data = request.get_json()
         video_url = data.get('fileUrl')
-        
+        print(f"Processing video from URL: {video_url}")
+
         if not video_url:
             return jsonify({
                 'error': 'No video URL provided',
@@ -23,7 +24,7 @@ def handle_video_processing():
 
         # Process the video using your main app function
         results = process_video(video_url)
-        
+        print(f"Results: {results}")
         # Return the results
         return jsonify({
             'status': 'success',

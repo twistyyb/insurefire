@@ -8,11 +8,13 @@ export default function Product() {
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [inventory, setInventory] = useState(null)
 
   const handleChange = (e) => {
     setFile(e.target.files[0])
     setResult('')
     setError('')
+    setInventory(null)
   }
 
   const handleSubmit = async () => {
@@ -20,15 +22,20 @@ export default function Product() {
     setLoading(true)
     setError('')
     setResult('')
+    setInventory(null)
 
     try {
       const uploadedFile = await uploadFileToSupabase(file, 'video')
-      setResult(`✅ Successfully uploaded "${uploadedFile.url}"`)
+      setResult(`Processing... "${uploadedFile.url}"`)
       console.log('Uploaded file details:', uploadedFile)
 
       // Call the Python backend to process the uploaded file
-      const response = await fetch('/api/process-video', {
+      console.log('calling backend:', uploadedFile.url)
+      const response = await fetch('http://localhost:8080/api/process-video', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ fileUrl: uploadedFile.url })
       })
 
@@ -37,18 +44,16 @@ export default function Product() {
       }
 
       const data = await response.json()
-      setResult(`✅ Successfully processed video: ${data.result}`)
-
-
-
-
-
-
-
+      if (data.status === 'success') {
+        setInventory(data.results)
+        setResult(`✅ Successfully processed video. Found ${data.results.total_items} items worth $${data.results.total_value.toLocaleString()}`)
+      } else {
+        throw new Error(data.error || 'Failed to process video')
+      }
 
     } catch (err) {
       console.error('Upload error:', err)
-      setError(`❌ Error uploading file: ${err.message}`)
+      setError(`❌ Error: ${err.message}`)
     } finally {
       setLoading(false)
     }
@@ -70,7 +75,7 @@ export default function Product() {
           disabled={!file || loading}
           className={styles.submit}
         >
-          {loading ? 'Uploading…' : 'Upload'}
+          {loading ? 'Processing...' : 'Upload and Process'}
         </button>
 
         {error && (
@@ -83,6 +88,16 @@ export default function Product() {
           <div className={styles.result}>
             <h3>Result</h3>
             <p>{result}</p>
+          </div>
+        )}
+
+        {inventory && (
+          <div className={styles.inventory}>
+            <h3>Inventory Details</h3>
+            <p>Total Items: {inventory.total_items}</p>
+            <p>Total Value: ${inventory.total_value.toLocaleString()}</p>
+            <p>Metadata Path: {inventory.metadata_path}</p>
+            <p>Snapshot Directory: {inventory.snapshot_dir}</p>
           </div>
         )}
       </div>
