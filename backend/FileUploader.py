@@ -34,7 +34,7 @@ class FileUploader:
         self.user_id = "66274d9c-6ece-4eeb-a8ed-19051a8a2103"  # Placeholder user ID
         
         # Setup UI
-        self.setup_ui()
+        self.setup_ui() 
         
     def setup_ui(self):
         # File display area

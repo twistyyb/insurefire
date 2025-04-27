@@ -4,3 +4,6 @@ supabase
 python-dotenv==1.0.0
 httpx[http2]>=0.28.1
 ultralytics==8.3.73
+flask>=2.0.0
+flask-cors>=3.0.0
+requests>=2.25.0
