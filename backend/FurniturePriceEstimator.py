@@ -124,8 +124,9 @@ class FurniturePriceEstimator:
             image = image_data  # Assume it's already a PIL Image
         
         prompt2 = """
-        Please analyze this item, estimate its price and and produce a single, number value between 1 and 1000000.
-        Analyze the object, and decide a very short name for it.
+        Please analyze this item, make a conservative estimate of its price and and produce a single, number value between 1 and 1000000.
+        If ever questioning the quality of the image or the premiumness of the item, choose a lower quartile price for the object.
+        Analyze the object, and decide a very short description name for it, 3-7 words. Note that item will fill 90% of the frame.
         Your response should be a list of two values in the format of ["name of object", price] exactly.
         Only output the list, nothing else, do not include any other text or comments.
         The object should be a common household item, if it is not, be safe and return the name, but set the price to 0.

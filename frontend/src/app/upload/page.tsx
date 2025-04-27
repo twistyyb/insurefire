@@ -14,7 +14,6 @@ export default function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [jobId, setJobId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -63,6 +62,8 @@ export default function UploadPage() {
     setUploadProgress(0);
 
     try {
+
+
       // Step 1: Create a job ID
       const jobResponse = await fetch('http://localhost:8080/api/create-job', {
         method: 'POST',
@@ -76,13 +77,11 @@ export default function UploadPage() {
       }
 
       const { job_id } = await jobResponse.json();
-      setJobId(job_id);
-      setSuccess(`Job created: ${job_id}`);
-      setUploadProgress(30);
+      setUploadProgress(33);
 
       // Step 2: Upload to Supabase with job ID
       const result = await uploadFileToSupabase(file, job_id, "video");
-      setUploadProgress(70);
+      setUploadProgress(66);
 
       // Step 3: Send the Supabase URL to backend for processing
       const processResponse = await fetch('http://localhost:8080/api/process-video', {
@@ -100,12 +99,11 @@ export default function UploadPage() {
         throw new Error('Failed to start video processing');
       }
 
-      setSuccess('Video uploaded and processing started!');
       setUploadProgress(100);
-      
-      // Redirect to results page with job ID
+
+      // Redirect to results page
       setTimeout(() => {
-        router.push(`/about?job_id=${job_id}`);
+        router.push('/about');
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload video');
@@ -171,12 +169,6 @@ export default function UploadPage() {
 
           {success && (
             <div className="mt-4 text-green-500">{success}</div>
-          )}
-
-          {jobId && (
-            <div className="mt-4 text-blue-500">
-              Job ID: {jobId}
-            </div>
           )}
 
           {isUploading && (
