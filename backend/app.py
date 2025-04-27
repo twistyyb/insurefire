@@ -2,28 +2,35 @@ import sys
 import os
 from ultralytics import YOLO
 import cv2
-import numpy as np
 from collections import defaultdict
-import time
 import json
 import shutil
 from FurniturePriceEstimator import FurniturePriceEstimator
 import tkinter as tk
+import argparse
+
+# Configuration variables that can be imported from other files
+hide_display = True  # Set to True to hide bounding boxes, labels, and inventory display
 
 # Initialize FurniturePriceEstimator
 root = tk.Tk()
 root.withdraw()  # Hide the main window since we only need the estimation functionality
 price_estimator = FurniturePriceEstimator(root)
 
-# Accept video path as argument or fallback to default
-video_path = sys.argv[1] 
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Object detection and tracking from video')
+parser.add_argument('video_path', help='Path to the video file')
+args = parser.parse_args()
+
+# Get video path from arguments
+video_path = args.video_path
 
 # Expand user (~) and get absolute path
-video_path = os.path.abspath(os.path.expanduser(video_path))
+#video_path = os.path.abspath(os.path.expanduser(video_path))
 
-if not os.path.isfile(video_path):
-    print(f"Error: File '{video_path}' does not exist.")
-    sys.exit(1)
+# if not os.path.isfile(video_path):
+#     print(f"Error: File '{video_path}' does not exist.")
+#     sys.exit(1)
 
 cap = cv2.VideoCapture(video_path)
 if not cap.isOpened():
@@ -35,7 +42,7 @@ if not cap.isOpened():
     sys.exit(1)
 
 # Load YOLO model
-model = YOLO('yolo11m.pt')
+model = YOLO('yolo11l.pt')
 
 # Get video properties
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -43,8 +50,12 @@ height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = cap.get(cv2.CAP_PROP_FPS)
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
+# Process every 2nd frame
+frame_skip = 2  # Process every 2nd frame
+new_fps = fps / frame_skip
 
 print(f"Original video: {width}x{height}, {fps} FPS, {total_frames} frames")
+print(f"Processing at: {new_fps:.1f} FPS (every {frame_skip} frames)")
 
 # Optionally, save output
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -56,7 +67,7 @@ tracked_objects = {}
 
 # Track history for filtering
 track_history = {}  # {track_id: {frames_seen: int, consecutive_misses: int, class_counts: {class: count}}}
-min_frames_to_count = 5  # Minimum number of frames an object must appear in to be counted
+min_frames_to_count = 3  # Minimum number of frames an object must appear in to be counted
 max_consecutive_misses = 5  # Maximum number of consecutive frames an object can be missing before being forgotten
 confidence_threshold = 0.55  # Confidence threshold for detection
 iou_threshold = 0.45  # IoU threshold for tracking
@@ -79,6 +90,21 @@ excluded_classes = ['person']
 # Metadata for items (to be used with Gemini API)
 item_metadata = {}
 
+# Function to calculate IoU between two bounding boxes
+def calculate_iou(box1, box2):
+    x1_1, y1_1, x2_1, y2_1 = box1
+    x1_2, y1_2, x2_2, y2_2 = box2
+    area1 = (x2_1 - x1_1) * (y2_1 - y1_1)
+    area2 = (x2_2 - x1_2) * (y2_2 - y1_2)
+    x1_i = max(x1_1, x1_2)
+    y1_i = max(y1_1, y1_2)
+    x2_i = min(x2_1, x2_2)
+    y2_i = min(y2_1, y2_2)
+    if x2_i <= x1_i or y2_i <= y1_i:
+        return 0.0
+    area_i = (x2_i - x1_i) * (y2_i - y1_i)
+    return area_i / (area1 + area2 - area_i)
+
 # Process the video
 frame_count = 0
 processed_count = 0
@@ -88,6 +114,11 @@ while cap.isOpened():
         break
     
     frame_count += 1
+    
+    # Skip frames to speed up processing
+    if (frame_count - 1) % frame_skip != 0:
+        continue
+        
     processed_count += 1
     
     # Display progress
@@ -198,18 +229,19 @@ while cap.isOpened():
                     }
             
             # Draw bounding box with different colors based on track stability
-            color = (0, 255, 0)  # Default green
-            if track_history[track_id]['frames_seen'] < min_frames_to_count:
-                color = (0, 165, 255)  # Orange for new tracks
-            elif track_history[track_id]['counted']:
-                color = (0, 255, 0)  # Green for counted tracks
+            if not hide_display:
+                color = (0, 255, 0)  # Default green
+                if track_history[track_id]['frames_seen'] < min_frames_to_count:
+                    color = (0, 165, 255)  # Orange for new tracks
+                elif track_history[track_id]['counted']:
+                    color = (0, 255, 0)  # Green for counted tracks
             
-            x1, y1, x2, y2 = box
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                x1, y1, x2, y2 = box
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             
-            # Display class name, track ID, confidence and frame count
-            label = f"{most_common_class} #{track_id} {conf:.2f} ({track_history[track_id]['frames_seen']})"
-            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                # Display class name, track ID, confidence and frame count
+                label = f"{most_common_class} #{track_id} {conf:.2f} ({track_history[track_id]['frames_seen']})"
+                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     
     # Update consecutive misses for tracks not seen in this frame
     tracks_to_remove = []
@@ -226,16 +258,17 @@ while cap.isOpened():
         del track_history[track_id]
     
     # Display object counts on the frame
-    y_pos = 30
-    cv2.putText(frame, f"Frame: {frame_count}", (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-    y_pos += 30
-    
-    cv2.putText(frame, "Items Inventory:", (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-    y_pos += 30
-    
-    for cls, count in sorted(object_counts.items()):
-        cv2.putText(frame, f"{cls}: {count}", (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+    if not hide_display:
+        y_pos = 30
+        cv2.putText(frame, f"Frame: {frame_count}", (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         y_pos += 30
+        
+        cv2.putText(frame, "Items Inventory:", (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        y_pos += 30
+    
+        for cls, count in sorted(object_counts.items()):
+            cv2.putText(frame, f"{cls}: {count}", (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            y_pos += 30
     
     # Show and save the frame
     cv2.imshow('Insurance Item Tracking', frame)
@@ -321,6 +354,18 @@ print(f"\nTotal unique items with snapshots: {snapshot_count}")
 print(f"Total estimated value: ${total_value:,.2f}")
 print(f"Snapshots saved: {snapshot_count}")
 print(f"Snapshots directory: {os.path.abspath(snapshot_dir)}")
+
+# Upload inventory to Supabase
+from InventoryUploader import InventoryUploader
+uploader = InventoryUploader()
+print("\nUploading inventory to Supabase...")
+response = uploader.upload_inventory(metadata_path, video_path)
+if response:
+    print(f"Inventory uploaded successfully with ID: {response.get('id')}")
+    print(f"Total value recorded: ${response.get('totalValue', total_value):,.2f}")
+    print(f"Number of items: {response.get('numItems', snapshot_count)}")
+else:
+    print("Failed to upload inventory to Supabase. Check connection and credentials.")
 
 # Clean up tkinter
 root.destroy()

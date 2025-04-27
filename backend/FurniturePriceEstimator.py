@@ -139,6 +139,7 @@ class FurniturePriceEstimator:
         Analyze the object, and decide a very short name for it.
         Your response should be a list of two values in the format of ["name of object", price] exactly.
         Only output the list, nothing else, do not include any other text or comments.
+        The object should be a common household item, if it is not, be safe and return the name, but set the price to 0.
         """
         
         # Get response from Gemini
