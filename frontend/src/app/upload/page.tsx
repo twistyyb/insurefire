@@ -145,7 +145,7 @@ export default function UploadPage() {
 
       // Redirect to results page
       setTimeout(() => {
-        router.push(`/results/${job_id}`);
+        router.push(`/results?job_id=${job_id}`);
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload video');
