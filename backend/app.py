@@ -31,7 +31,7 @@ def process_video(video_path, job_id, db):
     print(f"process_video: {video_path}")
 
     # Configuration variables that can be imported from other files
-    hide_display = True  # Set to True to hide bounding boxes, labels, and inventory display
+    hide_display = False  # Set to True to hide bounding boxes, labels, and inventory display
 
     # Initialize FurniturePriceEstimator
     root = tk.Tk()
@@ -142,7 +142,7 @@ def process_video(video_path, job_id, db):
         # Run YOLOv8 tracking on the frame with improved parameters
         results = model.track(
             frame, 
-            persist=True, 
+            persist=False, 
             conf=confidence_threshold, 
             iou=iou_threshold, 
             imgsz=640
