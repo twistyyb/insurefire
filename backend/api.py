@@ -9,6 +9,9 @@ from app import process_video  # Import your main processing function
 from supaDB import SupaDB
 import threading
 import time
+import base64
+from VoiceAgent import VoiceAgent
+import wave
 
 # Configure logging
 logging.basicConfig(
@@ -20,10 +23,13 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # Enable CORS for all routes with more specific configuration
 
 # Initialize database client
 db = SupaDB()
+
+# Voice agent cache - store instances by job_id
+voice_agents = {}
 
 # Create frames directory if it doesn't exist
 FRAMES_DIR = os.path.join(os.path.dirname(__file__), 'frames')
@@ -133,6 +139,116 @@ def get_job_status(job_id):
             'error': str(e),
             'status': 'error'
         }), 500
+
+@app.route('/api/voice/initialize/<job_id>', methods=['GET'])
+def initialize_voice_agent(job_id):
+    """Initialize a voice agent for a specific job"""
+    try:
+        # Get job data from database
+        job_data = db.get_job_by_id(job_id)
+        
+        if not job_data:
+            return jsonify({'error': 'Job not found'}), 404
+            
+        # Extract item metadata from result
+        item_metadata = job_data.get('result', {})
+        
+        # Create a new voice agent instance
+        voice_agents[job_id] = VoiceAgent(item_metadata)
+        
+        # Get welcome message
+        welcome_message = voice_agents[job_id]._generate_welcome_message()
+        
+        return jsonify({
+            'status': 'success',
+            'message': welcome_message,
+            'item_count': len(item_metadata),
+            'total_value': sum(item.get("estimated_price", 0) for item in item_metadata.values() if item.get("estimated_price") is not None)
+        })
+        
+    except Exception as e:
+        logging.error(f"Error initializing voice agent: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/voice/process', methods=['POST'])
+def process_voice_input():
+    """Process voice input from the user"""
+    try:
+        data = request.get_json()
+        job_id = data.get('job_id')
+        audio_data = data.get('audio')  # Base64 encoded audio
+        
+        if not job_id or not audio_data:
+            return jsonify({'error': 'Missing required parameters'}), 400
+            
+        # Get the voice agent for this job
+        voice_agent = voice_agents.get(job_id)
+        if not voice_agent:
+            # Initialize voice agent if not already in cache
+            job_data = db.get_job_by_id(job_id)
+            if not job_data:
+                return jsonify({'error': 'Job not found'}), 404
+                
+            # Extract item metadata from result (not metadata)
+            item_metadata = job_data.get('result', {})
+            voice_agents[job_id] = VoiceAgent(item_metadata)
+            voice_agent = voice_agents[job_id]
+            
+        # Decode audio data
+        try:
+            # Handle data URLs (e.g., "data:audio/webm;base64,...")
+            if ',' in audio_data:
+                audio_data = audio_data.split(',', 1)[1]
+            audio_bytes = base64.b64decode(audio_data)
+        except Exception as e:
+            logging.error(f"Error decoding audio data: {str(e)}")
+            return jsonify({'error': 'Invalid audio data format'}), 400
+        
+        # Save to temporary file
+        temp_audio_file = "temp_user_input.wav"
+        with open(temp_audio_file, 'wb') as f:
+            f.write(audio_bytes)
+            
+        # Transcribe audio
+        transcription = voice_agent._transcribe_audio(temp_audio_file)
+        
+        if not transcription:
+            return jsonify({'error': 'Failed to transcribe audio'}), 500
+            
+        # Process user input
+        voice_agent._add_to_history("user", transcription)
+        response = voice_agent._process_user_input(transcription)
+        voice_agent._add_to_history("assistant", response)
+        
+        # Generate speech
+        speech_file = voice_agent._speak(response)
+        
+        # Check if speech file was created successfully
+        if not speech_file or not os.path.exists(speech_file):
+            return jsonify({
+                'status': 'error',
+                'error': 'Failed to generate speech'
+            }), 500
+        
+        # Read speech file and encode as base64
+        with open(speech_file, 'rb') as f:
+            speech_data = base64.b64encode(f.read()).decode('utf-8')
+            
+        # Clean up temporary files after reading the file
+        if os.path.exists(speech_file):
+            os.remove(speech_file)
+        
+        return jsonify({
+            'status': 'success',
+            'transcription': transcription,
+            'response': response,
+            'speech': f"data:audio/mp3;base64,{speech_data}",
+            'conversation_history': voice_agent.conversation_history
+        })
+        
+    except Exception as e:
+        logging.error(f"Error processing voice input: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     logging.info("=== API SERVER STARTING ===")

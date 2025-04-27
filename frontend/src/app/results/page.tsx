@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import { getLatestJobResult, getJobResultById } from '@/lib/supabaseQueries';
 import ItemCard from '@/components/ItemCard';
+import VoiceAssistant from '@/components/VoiceAssistant';
 
 export default function ResultsPage() {
   const [results, setResults] = useState<any>(null);
@@ -109,6 +110,11 @@ export default function ResultsPage() {
                 <ItemCard key={key} itemKey={key} item={item} index={index} />
               ))}
             </div>
+            
+            {/* Voice Assistant */}
+            {jobId && results && (
+              <VoiceAssistant jobId={jobId} itemsData={results} />
+            )}
             
             <div className="mt-8 text-center">
               <Link 

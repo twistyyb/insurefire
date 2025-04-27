@@ -78,13 +78,18 @@ class VoiceAgent:
         self.total_detected_value = 0
         
     def start_conversation(self):
-        """Start the voice conversation flow"""
-        # Clear any existing audio files at the start
+        """Start a conversation with the user"""
+        # Clear any existing audio files
         self._clear_audio_files()
+        
+        # Initialize pygame mixer for audio playback
+        if not pygame.mixer.get_init():
+            mixer.init()
         
         # Welcome message
         welcome_message = self._generate_welcome_message()
-        self._speak(welcome_message)
+        # Don't speak the welcome message here - let the frontend handle it
+        # temp_file = self._speak(welcome_message)
         
         # Calculate total value of all detected items for reference
         self.total_detected_value = sum(item.get("estimated_price", 0) for item in self.detected_items.values() if item.get("estimated_price") is not None)
@@ -92,36 +97,8 @@ class VoiceAgent:
         # Add to conversation history
         self._add_to_history("assistant", welcome_message)
         
-        # Main conversation loop
-        self.conversation_stage = "introduction"
-        while True:
-            # Listen for user input
-            user_input = self._listen()
-            if not user_input:
-                continue
-                
-            # Add to conversation history
-            self._add_to_history("user", user_input)
-            
-            # Process user input and generate response
-            response = self._process_user_input(user_input)
-            
-            # Speak response
-            self._speak(response)
-            
-            # Add to conversation history
-            self._add_to_history("assistant", response)
-            
-            # Check if conversation should end
-            if "thank you" in user_input.lower() and "goodbye" in user_input.lower():
-                self._speak("You're welcome! Thank you for using Embers. Goodbye!")
-                # Clear audio files when conversation ends
-                self._clear_audio_files()
-                break
-                
-            # Short pause between turns
-            time.sleep(0.5)
-            
+        return welcome_message
+        
     def _generate_welcome_message(self):
         """Generate a welcome message based on detected items"""
         if not self.detected_items:
@@ -243,6 +220,19 @@ class VoiceAgent:
         print("Converting text to speech...")
         
         try:
+            # Clean the text to remove or replace special characters
+            # Replace markdown formatting to prevent them from being pronounced
+            cleaned_text = text
+            # Remove asterisks (bold/italic formatting)
+            cleaned_text = cleaned_text.replace('*', ' ').replace('**', ' ')
+            # Remove underscores (italic formatting)
+            cleaned_text = cleaned_text.replace('_', ' ').replace('__', ' ')
+            # Remove backticks (code formatting)
+            cleaned_text = cleaned_text.replace('`', ' ')
+            # Remove markdown links - replace [text](url) with just "text"
+            import re
+            cleaned_text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', cleaned_text)
+            
             url = f"https://api.elevenlabs.io/v1/text-to-speech/{self.voice_id}"
             
             headers = {
@@ -252,7 +242,7 @@ class VoiceAgent:
             }
             
             data = {
-                "text": text,
+                "text": cleaned_text,
                 "model_id": self.model_id,
                 "voice_settings": {
                     "stability": 0.5,
@@ -268,23 +258,26 @@ class VoiceAgent:
                 with open(temp_file, "wb") as f:
                     f.write(response.content)
                 
-                # Play audio
-                mixer.music.load(temp_file)
-                mixer.music.play()
+                # Don't play audio here - let the frontend handle it
+                # mixer.music.load(temp_file)
+                # mixer.music.play()
+                # 
+                # # Wait for audio to finish playing
+                # while mixer.music.get_busy():
+                #     pygame.time.wait(100)
+                # 
+                # # Clean up
+                # mixer.music.unload()
                 
-                # Wait for audio to finish playing
-                while mixer.music.get_busy():
-                    pygame.time.wait(100)
-                
-                # Clean up
-                mixer.music.unload()
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
+                # Return the file path so the API knows where to find it
+                return temp_file
             else:
                 print(f"TTS error: {response.status_code} - {response.text}")
+                return None
                 
         except Exception as e:
             print(f"TTS error: {e}")
+            return None
             
     def _clear_audio_files(self):
         """Clear any existing audio files"""

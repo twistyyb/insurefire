@@ -21,7 +21,7 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-screen">
       {/* Background Component */}
-      <BackgroundPaths title="InsureFire" />
+      <BackgroundPaths title="Embers" />
       
       {/* Gooey Text Animation */}
       <div className="absolute top-1/4 left-0 right-0 z-20 transform -translate-y-1/2">
@@ -53,7 +53,7 @@ export default function LandingPage() {
           ${isTransitioning ? 'scale-105 opacity-0 translate-y-10' : 'scale-100 opacity-100'}`}
         >
           <span className="opacity-90 group-hover:opacity-100 transition-opacity">
-            Enter InsureFire
+            Enter Embers
           </span>
           <span className="ml-3 opacity-70 group-hover:opacity-100 group-hover:translate-x-1.5 transition-all duration-300">
             →

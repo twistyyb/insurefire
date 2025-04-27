@@ -23,7 +23,7 @@ export default function AboutPage() {
                 Protecting What Matters Most
               </h1>
               <p className="text-xl text-gray-700 mb-8 leading-relaxed">
-                InsureFire uses cutting-edge AI technology to help homeowners and renters 
+                Embers uses cutting-edge AI technology to help homeowners and renters 
                 easily catalog their belongings for insurance purposes, giving you peace of mind 
                 when you need it most.
               </p>
@@ -81,7 +81,7 @@ export default function AboutPage() {
               >
                 <div className="bg-black text-white rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0 mt-1">2</div>
                 <div>
-                  <h3 className="font-medium text-gray-800 text-lg">Upload to InsureFire</h3>
+                  <h3 className="font-medium text-gray-800 text-lg">Upload to Embers</h3>
                   <p className="text-gray-600">Upload your video to our secure platform.</p>
                 </div>
               </motion.div>
