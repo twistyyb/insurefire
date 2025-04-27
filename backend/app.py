@@ -140,7 +140,7 @@ def process_video(video_path, job_id, db, show_display):
         # Run YOLOv8 tracking on the frame with improved parameters
         results = model.track(
             frame, 
-            persist=True, 
+            persist=False, 
             conf=confidence_threshold, 
             iou=iou_threshold, 
             imgsz=640
