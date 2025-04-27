@@ -23,8 +23,29 @@ export default function Product() {
 
     try {
       const uploadedFile = await uploadFileToSupabase(file, 'video')
-      setResult(`✅ Successfully uploaded "${uploadedFile.original_name}"`)
+      setResult(`✅ Successfully uploaded "${uploadedFile.url}"`)
       console.log('Uploaded file details:', uploadedFile)
+
+      // Call the Python backend to process the uploaded file
+      const response = await fetch('/api/process-video', {
+        method: 'POST',
+        body: JSON.stringify({ fileUrl: uploadedFile.url })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to process video')
+      }
+
+      const data = await response.json()
+      setResult(`✅ Successfully processed video: ${data.result}`)
+
+
+
+
+
+
+
+
     } catch (err) {
       console.error('Upload error:', err)
       setError(`❌ Error uploading file: ${err.message}`)
