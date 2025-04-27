@@ -4,9 +4,16 @@ import google.generativeai as genai
 from PIL import Image
 import io
 import ast
+import requests
+from dotenv import load_dotenv
 
-# Setup API key - you would need to get your own Gemini API key
-GEMINI_API_KEY = "AIzaSyB8PLcKFNESM1bvTAtPUEJEfubcLPOQ7Ys"
+# Load environment variables
+load_dotenv()
+
+# Setup API key from environment variables
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    print("Warning: GEMINI_API_KEY not found in environment variables")
 genai.configure(api_key=GEMINI_API_KEY)
 
 class FurniturePriceEstimator:
