@@ -86,8 +86,7 @@ import { supabase } from './supabase';
        size: file.size,
        type: file.type,
        data_type: dataType,
-       id: fileData?.id,
-       job_id: jobId
+       id: fileData?.id
      };
    } catch (error) {
      console.error('Error uploading file:', error);

@@ -81,7 +81,7 @@ export default function UploadPage() {
       setUploadProgress(30);
 
       // Step 2: Upload to Supabase with job ID
-      const result = await uploadFileToSupabase(file, jobId, "video");
+      const result = await uploadFileToSupabase(file, job_id, "video");
       setUploadProgress(70);
 
       // Step 3: Send the Supabase URL to backend for processing

@@ -49,6 +49,8 @@ def handle_video_processing():
         data = request.get_json()
         video_url = data.get('fileUrl')
         job_id = data.get('job_id')
+
+        db.update_video_address(job_id, video_url)
         
         logging.info(f"Processing request for job_id: {job_id}")
         logging.info(f"Video URL: {video_url}")
@@ -65,19 +67,12 @@ def handle_video_processing():
         
         try:
             logging.info("Starting video processing...")
-            results = process_video(video_url, job_id, db)
+            process_video(video_url, job_id, db)
 
-            db.update_job_result(job_id, results)
-            logging.info(f"Video processing completed. Results: {json.dumps(results, indent=2)}")
-            
-            logging.info("Updating job status to 'completed'...")
-            db.update_job_status(job_id, 'completed', results)
-            
             logging.info("Processing completed successfully")
             return jsonify({
                 'status': 'success',
-                'job_id': job_id,
-                'results': results
+                'job_id': job_id
             })
             
         except Exception as processing_error:

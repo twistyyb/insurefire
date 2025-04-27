@@ -118,3 +118,52 @@ class SupaDB:
         except Exception as e:
             print(f"Error updating job result for {job_id}: {str(e)}")
             raise
+
+    def complete_job(self, job_id: str, total_value: float, num_items: int, result: Dict[str, Any]) -> bool:
+        """
+        Completes a job by updating its metrics, result, and status in a single call.
+        
+        Args:
+            job_id (str): The ID of the job to update
+            total_value (float): The total value of all items
+            num_items (int): The number of items
+            result (Dict[str, Any]): The result data to store
+            
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        try:
+            response = self.client.from_('job').update({
+                'total value': total_value,
+                'numItems': num_items,
+                'result': result,
+                'status': 'completed'
+            }).eq('id', job_id).execute()
+            
+            return bool(response.data)
+            
+        except Exception as e:
+            print(f"Error completing job {job_id}: {str(e)}")
+            raise
+
+    def update_video_address(self, job_id: str, public_url: str) -> bool:
+        """
+        Updates the video address for a job.
+        
+        Args:
+            job_id (str): The ID of the job to update
+            public_url (str): The public URL of the video
+            
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        try:
+            response = self.client.from_('job').update({
+                'videoAddress': public_url
+            }).eq('id', job_id).execute()
+            
+            return bool(response.data)
+            
+        except Exception as e:
+            print(f"Error updating video address for job {job_id}: {str(e)}")
+            raise
