@@ -43,7 +43,7 @@ class InventoryUploader:
             print("Please check your Supabase credentials and internet connection.")
             return False
     
-    def upload_inventory(self, metadata_path, video_path=None):
+    def upload_inventory(self, metadata_path, video_path):
         """
         Upload inventory data to Supabase
         

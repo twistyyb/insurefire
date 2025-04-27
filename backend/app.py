@@ -9,7 +9,7 @@ from FurniturePriceEstimator import FurniturePriceEstimator
 import tkinter as tk
 import argparse
 
-def process_video(video_path):
+def process_video(video_path, job_id, db):
     print(f"process_video: {video_path}")
 
     # Configuration variables that can be imported from other files
@@ -61,8 +61,8 @@ def process_video(video_path):
     print(f"Processing at: {new_fps:.1f} FPS (every {frame_skip} frames)")
 
     # Optionally, save output
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('output_tracking_items.mp4', fourcc, fps, (width, height))
+    #fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    #out = cv2.VideoWriter('output_tracking_items.mp4', fourcc, fps, (width, height))
 
     # Dictionary to store unique object counts
     object_counts = defaultdict(int)
@@ -275,7 +275,7 @@ def process_video(video_path):
         
         # Show and save the frame
         cv2.imshow('Insurance Item Tracking', frame)
-        out.write(frame)
+        #out.write(frame)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -358,24 +358,10 @@ def process_video(video_path):
     print(f"Snapshots saved: {snapshot_count}")
     print(f"Snapshots directory: {os.path.abspath(snapshot_dir)}")
 
-    # Upload inventory to Supabase
-    from InventoryUploader import InventoryUploader
-    uploader = InventoryUploader()
-    print("\nUploading inventory to Supabase...")
-    response = uploader.upload_inventory(metadata_path, video_path)
-    if response:
-        print(f"Inventory uploaded successfully with ID: {response.get('id')}")
-        print(f"Total value recorded: ${response.get('totalValue', total_value):,.2f}")
-        print(f"Number of items: {response.get('numItems', snapshot_count)}")
-    else:
-        print("Failed to upload inventory to Supabase. Check connection and credentials.")
-
-
-    # response.get('id') is the jobId
     # Clean up tkinter
     root.destroy()
 
     cap.release()
-    out.release()
+    #out.release()
     cv2.destroyAllWindows()
     return snapshot_dir

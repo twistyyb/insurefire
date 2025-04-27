@@ -2,71 +2,71 @@
   "tv_1": {
     "class": "tv",
     "track_id": 1,
-    "confidence": 0.5609278082847595,
-    "first_seen_frame": 7,
-    "snapshot_path": "item_snapshots/tv_1_id1_conf0.84_frame27.jpg",
+    "confidence": 0.6142777800559998,
+    "first_seen_frame": 5,
+    "snapshot_path": "item_snapshots\\tv_1_id1_conf0.86_frame27.jpg",
     "estimated_value": null,
-    "best_confidence": 0.8354297876358032,
+    "best_confidence": 0.8637484312057495,
     "snapshot_frame": 27,
-    "estimated_name": "TV",
-    "estimated_price": 800
+    "estimated_name": "Television",
+    "estimated_price": 400
   },
   "couch_1": {
     "class": "couch",
     "track_id": 4,
-    "confidence": 0.732740044593811,
+    "confidence": 0.7566869854927063,
     "first_seen_frame": 91,
-    "snapshot_path": "item_snapshots/couch_1_id4_conf0.80_frame133.jpg",
+    "snapshot_path": "item_snapshots\\couch_1_id4_conf0.79_frame119.jpg",
     "estimated_value": null,
-    "best_confidence": 0.8019100427627563,
-    "snapshot_frame": 133,
+    "best_confidence": 0.7890750765800476,
+    "snapshot_frame": 119,
     "estimated_name": "Armchair",
-    "estimated_price": 350
+    "estimated_price": 400
   },
   "bottle_1": {
     "class": "bottle",
     "track_id": 5,
-    "confidence": 0.6697600483894348,
+    "confidence": 0.7030101418495178,
     "first_seen_frame": 109,
-    "snapshot_path": "item_snapshots/bottle_1_id5_conf0.82_frame141.jpg",
+    "snapshot_path": "item_snapshots\\bottle_1_id5_conf0.83_frame141.jpg",
     "estimated_value": null,
-    "best_confidence": 0.8215103149414062,
+    "best_confidence": 0.8303085565567017,
     "snapshot_frame": 141,
     "estimated_name": "Bottle",
-    "estimated_price": 15
+    "estimated_price": 10
   },
   "couch_2": {
     "class": "couch",
     "track_id": 7,
-    "confidence": 0.8161981105804443,
+    "confidence": 0.7944573163986206,
     "first_seen_frame": 125,
-    "snapshot_path": "item_snapshots/couch_2_id7_conf0.94_frame147.jpg",
+    "snapshot_path": "item_snapshots\\couch_2_id7_conf0.93_frame141.jpg",
     "estimated_value": null,
-    "best_confidence": 0.9388172626495361,
-    "snapshot_frame": 147,
-    "estimated_name": "Sofa",
-    "estimated_price": 1500
+    "best_confidence": 0.9344877600669861,
+    "snapshot_frame": 141,
+    "estimated_name": "Couch",
+    "estimated_price": 5000
   },
   "remote_1": {
     "class": "remote",
     "track_id": 8,
-    "confidence": 0.636238694190979,
-    "first_seen_frame": 127,
-    "snapshot_path": "item_snapshots/remote_1_id8_conf0.77_frame131.jpg",
+    "confidence": 0.6829853057861328,
+    "first_seen_frame": 129,
+    "snapshot_path": "item_snapshots\\remote_1_id8_conf0.76_frame131.jpg",
     "estimated_value": null,
-    "best_confidence": 0.773002028465271,
+    "best_confidence": 0.7562158107757568,
     "snapshot_frame": 131,
     "estimated_name": "Cell Phone",
-    "estimated_price": 300
+    "estimated_price": 0
   },
   "suitcase_1": {
     "class": "suitcase",
     "track_id": 9,
-    "confidence": 0.8003390431404114,
+    "confidence": 0.7991375923156738,
     "first_seen_frame": 185,
-    "snapshot_path": "item_snapshots/suitcase_1_id9_conf0.81_frame197.jpg",
+    "snapshot_path": "item_snapshots\\suitcase_1_id9_conf0.82_frame197.jpg",
     "estimated_value": null,
-    "best_confidence": 0.8083502650260925,
+    "best_confidence": 0.8235105872154236,
     "snapshot_frame": 197,
     "estimated_name": "Suitcase",
     "estimated_price": 150
@@ -74,13 +74,13 @@
   "couch_3": {
     "class": "couch",
     "track_id": 10,
-    "confidence": 0.8493145108222961,
+    "confidence": 0.8616687655448914,
     "first_seen_frame": 193,
-    "snapshot_path": "item_snapshots/couch_3_id10_conf0.90_frame227.jpg",
+    "snapshot_path": "item_snapshots\\couch_3_id10_conf0.89_frame227.jpg",
     "estimated_value": null,
-    "best_confidence": 0.8991255760192871,
+    "best_confidence": 0.8935429453849792,
     "snapshot_frame": 227,
     "estimated_name": "Armchair",
-    "estimated_price": 250
+    "estimated_price": 300
   }
 }
