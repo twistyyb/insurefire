@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
 import sys
@@ -7,6 +7,8 @@ import logging
 from datetime import datetime
 from app import process_video  # Import your main processing function
 from supaDB import SupaDB
+import threading
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -22,6 +24,21 @@ CORS(app)  # Enable CORS for all routes
 
 # Initialize database client
 db = SupaDB()
+
+# Create frames directory if it doesn't exist
+FRAMES_DIR = os.path.join(os.path.dirname(__file__), 'frames')
+os.makedirs(FRAMES_DIR, exist_ok=True)
+
+# Global variable to track the latest frame
+latest_frame_path = None
+frame_lock = threading.Lock()
+
+@app.route('/api/latest-frame', methods=['GET'])
+def get_latest_frame():
+    frame_path = os.path.join(FRAMES_DIR, 'displayFrame.jpg')
+    if os.path.exists(frame_path):
+        return send_file(frame_path, mimetype='image/jpeg')
+    return jsonify({'error': 'No frame available'}), 404
 
 @app.route('/api/create-job', methods=['POST'])
 def create_job():
@@ -49,11 +66,13 @@ def handle_video_processing():
         data = request.get_json()
         video_url = data.get('fileUrl')
         job_id = data.get('job_id')
+        show_display = data.get('show_display', False)  # Default to False if not specified
 
         db.update_video_address(job_id, video_url)
         
         logging.info(f"Processing request for job_id: {job_id}")
         logging.info(f"Video URL: {video_url}")
+        logging.info(f"Show display: {show_display}")
         
         if not video_url or not job_id:
             logging.error("Missing required parameters in request")
@@ -67,7 +86,7 @@ def handle_video_processing():
         
         try:
             logging.info("Starting video processing...")
-            process_video(video_url, job_id, db)
+            process_video(video_url, job_id, db, show_display)
 
             logging.info("Processing completed successfully")
             return jsonify({
