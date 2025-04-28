@@ -31,7 +31,7 @@ def process_video(video_path, job_id, db, show_display):
 
     # Configuration variables that can be imported from other files
     hide_display = not show_display  # Set to True to hide bounding boxes, labels, and inventory display
-    hide_display = True
+    hide_display = False
     # Initialize FurniturePriceEstimator
     price_estimator = FurniturePriceEstimator()
 
@@ -69,15 +69,15 @@ def process_video(video_path, job_id, db, show_display):
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     # Process every 2nd frame
-    frame_skip = 2  # Process every 2nd frame
+    frame_skip = 1  # Process every 2nd frame
     new_fps = fps / frame_skip
 
     print(f"Original video: {width}x{height}, {fps} FPS, {total_frames} frames")
     print(f"Processing at: {new_fps:.1f} FPS (every {frame_skip} frames)")
 
     # Optionally, save output
-    #fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    #out = cv2.VideoWriter('output_tracking_items.mp4', fourcc, fps, (width, height))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter('fullOutputVideo.mp4', fourcc, fps, (width, height))
 
     # Dictionary to store unique object counts
     object_counts = defaultdict(int)
@@ -282,7 +282,7 @@ def process_video(video_path, job_id, db, show_display):
         
             # Show and save the frame
             cv2.imshow('Insurance Item Tracking', frame)
-            #out.write(frame)
+            out.write(frame)
         
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -381,7 +381,7 @@ def process_video(video_path, job_id, db, show_display):
     print(f"Snapshots uploaded: {snapshot_count}")
 
     cap.release()
-    #out.release()
+    out.release()
     cv2.destroyAllWindows()
 
     # update job on supabase
