@@ -261,8 +261,8 @@ export default function UploadPage() {
             >
               {isUploading ? 'Processing...' : 'Process Video'}
             </button>
-
-            <label className={`flex items-center space-x-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+            {/* Visualization checkbox */}
+            {/* <label className={`flex items-center space-x-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
               <input
                 type="checkbox"
                 checked={showVisualization}
@@ -271,7 +271,7 @@ export default function UploadPage() {
                 className="form-checkbox h-5 w-5 text-blue-600 focus:ring-blue-500"
               />
               <span className={`text-gray-700 ${isUploading ? 'text-gray-400' : ''}`}>Visualize Processing</span>
-            </label>
+            </label> */}
           </div>
           
           <div className="mt-12 bg-blue-50 p-6 rounded-lg max-w-2xl">

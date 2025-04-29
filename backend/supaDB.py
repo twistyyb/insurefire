@@ -11,7 +11,7 @@ class SupaDB:
         if client is None:
             load_dotenv()
             self.SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-            self.SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+            self.SUPABASE_KEY = os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
             
             if not self.SUPABASE_URL or not self.SUPABASE_KEY:
                 raise ValueError("Missing Supabase credentials in environment variables")
