@@ -1,7 +1,8 @@
-# Embers: Turn Down the Heat on Risk 🔥🏡 ([devpost.com/software/insurefire](url))
+# Embers: Turn Down the Heat on Risk 🔥🏡
 
 ![2cf7921c-995b-4694-a28b-1a9090f7b978](https://github.com/user-attachments/assets/5ea1ce92-ccce-4c1d-b5ba-1c59a04c6a4c)
 
+Devpost: ([devpost.com/software/insurefire](url))
 Every year, many regions around the world, specially California, faces one of the biggest natural disaster challenges in the world: Wildfires. We built Embers because we believe your valuables are more than objects—they represent deep-rooted memories and a lifetime of hard work. Our mission is simple: use the best technology we have to protect everything you care about **before disaster strikes**.
 
 ## How It Works 🖥️
